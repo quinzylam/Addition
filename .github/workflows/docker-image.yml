@@ -5,7 +5,7 @@ env:
   CLUSTER_NAME: k8s-1-21-5-do-0-ams3-azure-arc
   CLUSTER_RESOURCE_GROUP: AzureArc
   NAMESPACE: AzureArcDemo
-  APP_NAME: Addition
+  APP_NAME: addition
   
 on:
   push:

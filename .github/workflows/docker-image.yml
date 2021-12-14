@@ -40,7 +40,6 @@ jobs:
         cluster-type: arc
         cluster-name: ${{ env.CLUSTER_NAME }}
         resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
-        k8s-secret: '${{ secrets.AZURE_CREDENTIALS }}'
       id: setcontext
     
      

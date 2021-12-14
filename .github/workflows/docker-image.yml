@@ -35,7 +35,7 @@ jobs:
     - name: Setup Kubctl
       uses: azure/setup-kubectl@v1
       with:
-        version: 'v1.15.0' # default is latest stable
+        version: '<version>' # default is latest stable
         id: install
         
     - name: Set target Azure Arc Kubernetes cluster

@@ -2,7 +2,7 @@ name: Docker Image CI
 
 env:
   REGISTRY_NAME: azurearcacr
-  CLUSTER_NAME: k8s-1-21-5-do-0-ams3-azure-arc
+  CLUSTER_NAME: docker-desktop
   CLUSTER_RESOURCE_GROUP: AzureArc
   NAMESPACE: AzureArcDemo
   APP_NAME: addition

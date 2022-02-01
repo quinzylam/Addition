@@ -35,10 +35,11 @@ jobs:
     - name: Set target Azure Arc Kubernetes cluster
       uses: azure/k8s-set-context@v2
       with:
-        method: service-principal
+        method: service-account
         cluster-type: arc
         cluster-name: ${{ env.CLUSTER_NAME }}
         resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+        token: ${{ secrets.TOKEN }}
     
      
     - name: Create namespace if doesnt exist

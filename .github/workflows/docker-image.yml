@@ -32,7 +32,23 @@ jobs:
         docker build . --file Addition/Dockerfile --tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
       
-    
+    - name: Enable Cluster Connect
+      uses: azure/CLI@v1
+      with:
+       azcliversion: 2.29.2
+       inlineScript: az connectedk8s enable-features --features cluster-connect -n ${{ env.CLUSTER_NAME}} -g ${{ env.CLUSTER_RESOURCE_GROUP}}
+       
+    - name: Set target Azure Arc Kubernetes cluster
+      uses: azure/CLI@v1
+      with:
+       azcliversion: 2.29.2
+       inlinescript: |
+       uses: azure/k8s-set-context@v2
+       method: service-account
+       cluster-type: arc
+       cluster-name: ${{ env.CLUSTER_NAME }}
+       resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+       token: ${{ secrets.TOKEN }}
      
     - name: Create namespace if doesnt exist
       run: |

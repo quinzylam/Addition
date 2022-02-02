@@ -42,17 +42,10 @@ jobs:
       with:
        azcliversion: 2.29.2
        inlineScript: |
-        az config set extension.use_dynamic_install=yes_without_prompt
-        az connectedk8s enable-features --features cluster-connect -n ${{ env.CLUSTER_NAME}} -g ${{ env.CLUSTER_RESOURCE_GROUP}}
+        az connectedk8s proxy -n ${{ env.CLUSTER_NAME}} -g ${{ env.CLUSTER_RESOURCE_GROUP}} --token ${{ secrets.TOKEN }}
+        
        
-    - name: Set target Azure Arc Kubernetes cluster
-      uses: azure/k8s-set-context@v2
-      with:
-       method: service-account
-       cluster-type: arc
-       cluster-name: ${{ env.CLUSTER_NAME }}
-       resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
-       token: ${{ secrets.TOKEN }}
+
      
     - name: Create namespace if doesnt exist
       run: |

@@ -32,10 +32,6 @@ jobs:
         docker build . --file Addition/Dockerfile --tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
         
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
         
     - name: Enable Cluster Connect
       uses: azure/CLI@v1

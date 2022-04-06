@@ -32,5 +32,17 @@ jobs:
         docker build . --file Addition/Dockerfile --tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
         
+
+    - name: Helm Deploy
+      uses: vimeda/helm@v1.6.8
+      with:
+        release: nginx
+        namespace: default
+        chart: addition-chart
+        values: |
+          name: addition-chart
+        value-files: "values.yaml"
+        
+
         
   

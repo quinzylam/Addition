@@ -1,11 +1,12 @@
-name: Docker Image CI
+name: Deploy to Azurel Arc Enabled Cluster
 
 env:
   REGISTRY_NAME: azurearcacr
-  CLUSTER_NAME: docker-desktop
-  CLUSTER_RESOURCE_GROUP: AzureArc
+  CLUSTER_NAME: minikube
+  CLUSTER_RESOURCE_GROUP: AzureArcTest
   NAMESPACE: AzureArcDemo
   APP_NAME: addition
+  SECRET_NAME: image-secret
   
 on:
   push:
@@ -15,34 +16,59 @@ on:
 
 jobs:
   build:
+    permissions:
+     actions: read
+     contents: read
+     id-token: write
+     
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
     
-    - name: Connet to Azure Container Registry
-      uses: azure/docker-login@v1
+    - name: Connect to Azure And Login
+      uses: azure/login@v1
       with:
-        login-server: ${{ env.REGISTRY_NAME}}.azurecr.io
-        username: ${{ secrets.REGISTRY_USERNAME }}
-        password: ${{ secrets.REGISTRY_PASSWORD }}
-        
-    - name: Build the Docker image
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+       
+    - name: Build and Push the Docker image
       run: |
-        docker build . --file Addition/Dockerfile --tag ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
-        docker push ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+        az acr build --image ${{ env.APP_NAME }}:${{ github.sha }} --registry ${{ env.REGISTRY_NAME }} -g ${{ env.CLUSTER_RESOURCE_GROUP }} ./Addition
         
-
-    - name: Helm Deploy
-      uses: vimeda/helm@v1.6.8
+    - name: Get Context
+      uses: azure/k8s-set-context@v2
       with:
-        release: nginx
-        namespace: default
-        chart: addition-chart
-        values: |
-          name: addition-chart
-        value-files: "values.yaml"
-        
-
-        
-  
+       method: service-principal
+       cluster-type: arc
+       cluster-name: ${{ env.CLUSTER_NAME }}
+       resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+       
+    - name: Get Credentials       
+      run: |
+        az acr update -n ${{ env.REGISTRY_NAME }} - g ${{ env.CLUSTER_RESOURCE_GROUP }} --admin-enabled true
+        ACR_USERNAME=$(az acr credentials show -g ${{ env.CLUSTER_RESOURCE_GROUP }} -n ${{ env.REGISTRY_NAME }} --query username -o tsv)
+        ACR_PASSWORD=$(az acr credential show -g ${{ env.CLUSTER_RESOURCE_GROUP }} -n ${{ env.REGISTRY_NAME }} --query passwords[0].value -o tsv)
+        echo "::add-mask::${ACR_USERNAME}"
+        echo "::set-output name=username::${ACR_USERNAME}"
+        echo "::add-mask::${ACR_PASSWORD}"
+        echo "::set-output name=password::${ACR_PASSWORD}"
+      id: get-creds
+      
+    - name: Create Secrets
+      uses: Azure/k8s-create-secret@v1.1
+      with:
+       container-registry-url: ${{ env.REGISTRY_NAME }}.azurecr.io
+       container-registry-username: ${{ steps.get-creds.outputs.username }}
+       container-registry-password: ${{ steps.get-creds.outputs.password }}
+       secret-name: ${{ env.SECRET_NAME }}
+       
+    - name: Deploy Addition
+      uses: Azure/k8s-deploy@v3.0
+      with:
+       action: deploy
+       manifests: |
+        addition-chart/Chart.yaml
+      images: |
+       ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.APP_NAME }}:${{ github.sha }}
+      imagepullsecrets: |
+       ${{ env.SECRET_NAME }}
